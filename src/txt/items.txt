@@ -1,0 +1,10 @@
+TVs+Samsung 4K OLED
+Phones-Nokia
+TVs+Sony Bravia
+Computers+Lenovo ThinkPad
+Phones+OnePlus 7T
+Computers-Apple
+TVs+LG 4K OLED
+Phones+Meizu Pro 6 Plus
+Computers+Sony Vaio
+Phones+Xiaomi Pocophone

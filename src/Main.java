@@ -1,4 +1,9 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Main {
     public static final String DB_URL = "jdbc:h2:C:/Users/Ilnur Khusainov/IdeaProjects/lab5/db/lab5_DB.mv.db"; // последняя часть пути - это название файла
@@ -23,12 +28,12 @@ public class Main {
         int columns = rs.getMetaData().getColumnCount();
         // Перебор строк с данными
         for (int i = 1; i <= columns; i++) {
-            System.out.printf("%-8s\t", rs.getMetaData().getColumnName(i));
+            System.out.printf("%-17s\t", rs.getMetaData().getColumnName(i));
         }
         System.out.println();
         while(rs.next()){
             for (int i = 1; i <= columns; i++){
-                System.out.printf("%-8s\t", rs.getString(i));
+                System.out.printf("%-17s\t", rs.getString(i));
             }
             System.out.println();
         }
@@ -173,7 +178,7 @@ public class Main {
         pStmt.close();
     }
 
-    private void removeItemToGroup(Connection conn, String itemName, String groupName)  throws SQLException{
+    private void removeItemToGroup(Connection conn, String itemName, String groupName)  throws SQLException {
         int groupId = getGroupId(conn, groupName);
 
         if (groupId == -1) return;
@@ -185,6 +190,41 @@ public class Main {
         pStmt.executeUpdate();
 
         pStmt.close();
+    }
+
+    private List<String> readTxtFile() {
+        String fileName = "src/txt/items.txt";
+        List<String> readList = new ArrayList<>();
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(fileName));
+            String s;
+            while ((s = reader.readLine()) != null) {
+                readList.add(s);
+            }
+        }
+        catch (IOException e) { e.printStackTrace(); }
+        finally { return readList; }
+    }
+
+    private void executeFromFile(Connection conn) throws SQLException {
+        conn.setAutoCommit(false);
+        try {
+            for (String i : readTxtFile()) {
+                String split[];
+                if (i.contains("+")) {
+                    split = i.split("\\+", 2);
+                    addItemToGroup(conn, split[1], split[0]);
+                } else {
+                    split = i.split("-", 2);
+                    removeItemToGroup(conn, split[1], split[0]);
+                }
+            }
+            conn.commit();
+        }
+        catch (SQLException e) {
+            System.err.println("Execution failed. Transaction rollback");
+            conn.rollback();
+        }
     }
 
     public static void main(String[] args) {
@@ -205,7 +245,7 @@ public class Main {
 //            main.viewItemsInGroup(conn, 2);
             main.viewItemsInGroup(conn, "Computers");
 
-            main.createTablesIfNeeded(conn);*/
+            main.createTablesIfNeeded(conn);
 //            main.doWork();
 
             main.addItemToGroup(conn, "Tefal", "Irons");
@@ -218,6 +258,22 @@ public class Main {
             main.viewGroups(conn);
             System.out.println();
             main.viewItems(conn);
+*/
+
+            main.dropTables(conn);
+            main.createTablesIfNeeded(conn);
+
+            main.viewGroups(conn);
+            System.out.println();
+            main.viewItems(conn);
+            System.out.println();
+
+            main.executeFromFile(conn);
+
+            main.viewGroups(conn);
+            System.out.println();
+            main.viewItems(conn);
+            System.out.println();
 
             conn.close();
         }
