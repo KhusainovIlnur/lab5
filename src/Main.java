@@ -154,6 +154,39 @@ public class Main {
         stmt.close();
     }
 
+    private void addItemToGroup(Connection conn, String itemName, String groupName)  throws SQLException{
+        int groupId = getGroupId(conn, groupName);
+        if (groupId == -1) {
+            String sql = "INSERT INTO ITEMGROUP (TITLE) VALUES (?)";
+            PreparedStatement pStmt = conn.prepareStatement(sql);
+            pStmt.setString(1, groupName);
+            pStmt.executeUpdate();
+            groupId = getGroupId(conn, groupName);
+        }
+
+        String sql = "INSERT INTO ITEM (TITLE, GROUPID) VALUES (?, ?)";
+        PreparedStatement pStmt = conn.prepareStatement(sql);
+        pStmt.setString(1, itemName);
+        pStmt.setInt(2, groupId);
+        pStmt.executeUpdate();
+
+        pStmt.close();
+    }
+
+    private void removeItemToGroup(Connection conn, String itemName, String groupName)  throws SQLException{
+        int groupId = getGroupId(conn, groupName);
+
+        if (groupId == -1) return;
+
+        String sql = "DELETE FROM ITEM WHERE TITLE = ? AND GROUPID = ?";
+        PreparedStatement pStmt = conn.prepareStatement(sql);
+        pStmt.setString(1, itemName);
+        pStmt.setInt(2, groupId);
+        pStmt.executeUpdate();
+
+        pStmt.close();
+    }
+
     public static void main(String[] args) {
         Connection conn = null;
         try {
@@ -161,7 +194,7 @@ public class Main {
             System.out.println("Подключение успешно ");
             Main main = new Main();
 
-            main.dropTables(conn);
+           /* main.dropTables(conn);
             main.createTablesIfNeeded(conn);
 
             main.viewGroups(conn);
@@ -172,8 +205,19 @@ public class Main {
 //            main.viewItemsInGroup(conn, 2);
             main.viewItemsInGroup(conn, "Computers");
 
-            main.createTablesIfNeeded(conn);
+            main.createTablesIfNeeded(conn);*/
 //            main.doWork();
+
+            main.addItemToGroup(conn, "Tefal", "Irons");
+            main.viewGroups(conn);
+            System.out.println();
+            main.viewItems(conn);
+            System.out.println();
+
+            main.removeItemToGroup(conn, "Tefal", "Irons");
+            main.viewGroups(conn);
+            System.out.println();
+            main.viewItems(conn);
 
             conn.close();
         }
