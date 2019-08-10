@@ -19,9 +19,6 @@ public class Main {
     }
 
     private void doWork() {
-
-
-
     }
 
     private void print(ResultSet rs) throws SQLException{
@@ -115,6 +112,8 @@ public class Main {
                 "       title   VARCHAR(100) NOT NULL UNIQUE," +
                 "       groupid INTEGER," +
                 "       FOREIGN KEY (groupid) REFERENCES itemgroup(id)" +
+                "       ON DELETE CASCADE " +
+                "       ON UPDATE CASCADE" +
                 ");";
         stmt= conn.createStatement();
         stmt.addBatch(sqlCreateTables1);
@@ -192,11 +191,11 @@ public class Main {
         pStmt.close();
     }
 
-    private List<String> readTxtFile() {
-        String fileName = "src/txt/items.txt";
+    private List<String> readTxtFile(String filename) {
+        String path = "src/txt/" + filename;
         List<String> readList = new ArrayList<>();
         try {
-            BufferedReader reader = new BufferedReader(new FileReader(fileName));
+            BufferedReader reader = new BufferedReader(new FileReader(path));
             String s;
             while ((s = reader.readLine()) != null) {
                 readList.add(s);
@@ -209,7 +208,7 @@ public class Main {
     private void executeFromFile(Connection conn) throws SQLException {
         conn.setAutoCommit(false);
         try {
-            for (String i : readTxtFile()) {
+            for (String i : readTxtFile("items.txt")) {
                 String split[];
                 if (i.contains("+")) {
                     split = i.split("\\+", 2);
@@ -227,7 +226,53 @@ public class Main {
         }
     }
 
-    public static void main(String[] args) {
+    private void executeFromFileGroups(Connection conn) throws SQLException {
+        conn.setAutoCommit(false);
+        try {
+            String sql = "SELECT * FROM itemgroup";
+            Statement stmt = conn.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE);
+            ResultSet rs = stmt.executeQuery(sql);
+            String rowTitle;
+
+            String groupName;
+            for (String i : readTxtFile("groups.txt")) {
+                boolean add = false, delete = false;
+                if (String.valueOf(i.charAt(0)).equals("+")) add = true;
+                else delete = true;
+
+                groupName = i.substring(1);
+                boolean isExist = false;
+                rs.first();
+                while (rs.next()) {
+                    rowTitle = rs.getString("TITLE");
+                    if (rowTitle.equals(groupName) && add) {
+                        isExist = true;
+                        break;
+                    }
+                    if (rowTitle.equals(groupName) && delete) {
+                        rs.deleteRow();
+                        isExist = true;
+                        break;
+                    }
+                }
+                if (!isExist && add) {
+                    rs.moveToInsertRow(); // переводим курсор в режим вставки
+                    rs.updateString("TITLE", groupName);
+                    rs.insertRow();
+                    rs.moveToCurrentRow(); // переводим курсор в режим просмотра
+                }
+            }
+
+            conn.commit();
+
+        }
+        catch (SQLException e) {
+            System.err.println("Execution failed. Transaction rollback");
+            conn.rollback();
+        }
+    }
+
+        public static void main(String[] args) {
         Connection conn = null;
         try {
             conn = getConnection();
@@ -258,7 +303,7 @@ public class Main {
             main.viewGroups(conn);
             System.out.println();
             main.viewItems(conn);
-*/
+
 
             main.dropTables(conn);
             main.createTablesIfNeeded(conn);
@@ -274,6 +319,20 @@ public class Main {
             System.out.println();
             main.viewItems(conn);
             System.out.println();
+
+            main.dropTables(conn);
+            main.createTablesIfNeeded(conn);
+
+            main.viewGroups(conn);
+            System.out.println();
+
+            main.executeFromFileGroups(conn);
+
+            main.viewGroups(conn);
+            System.out.println();
+            main.viewItems(conn);
+            System.out.println();
+*/
 
             conn.close();
         }

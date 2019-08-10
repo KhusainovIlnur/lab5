@@ -4,11 +4,13 @@ CREATE TABLE IF NOT EXISTS itemgroup(
 );
 
 CREATE TABLE IF NOT EXISTS item(
-       id      INTEGER PRIMARY KEY AUTO_INCREMENT,
-       title   VARCHAR(100) NOT NULL UNIQUE,
-       groupid INTEGER,
+        id      INTEGER PRIMARY KEY AUTO_INCREMENT,
+        title   VARCHAR(100) NOT NULL UNIQUE,
+        groupid INTEGER,
 
-       FOREIGN KEY (groupid) REFERENCES itemgroup(id)
+        FOREIGN KEY (groupid) REFERENCES itemgroup(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
 INSERT INTO ITEMGROUP(TITLE) values ( 'Computers' );
